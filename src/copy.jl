@@ -108,18 +108,31 @@ new_c = ref_map[c]
 ```
 """
 function JuMP.copy_model(model::InfiniteModel)
-    # Swap backend with sentinel to avoid the GenericModel
-    # deepcopy restriction in JuMP
+    # Temporarily swap out fields that can't/shouldn't be
+    # deepcopied:
+    # - backend contains a GenericModel (JuMP blocks deepcopy)
+    # - ext should go through copy_extension_data protocol
     saved_backend = model.backend
+    saved_ext = model.ext
     model.backend = _CopyBackend()
+    model.ext = Dict{Symbol, Any}()
     new_model = try
         Base.deepcopy(model)
     finally
         model.backend = saved_backend
+        model.ext = saved_ext
     end
     # Give new model a fresh backend
     new_model.backend = TranscriptionBackend()
     new_model.ready_to_optimize = false
+    # Copy extension data via JuMP's protocol so that
+    # extensions (e.g., DisjunctiveProgramming.jl) can
+    # handle their own data correctly.
+    for (key, data) in model.ext
+        new_model.ext[key] = JuMP.copy_extension_data(
+            data, new_model, model
+        )
+    end
     ref_map = InfiniteReferenceMap(model, new_model)
     return new_model, ref_map
 end
