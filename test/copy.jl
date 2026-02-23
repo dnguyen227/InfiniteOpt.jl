@@ -70,8 +70,8 @@ end
     @test JuMP.num_variables(new_model) == n_orig + 1
     @test JuMP.num_variables(model) == n_orig
 
-    # Original model is unmodified (backend restored)
-    @test !(model.backend isa InfiniteOpt._CopyBackend)
+    # Original model is unmodified
+    @test model.backend isa TranscriptionBackend
 end
 
 @testset "copy_model Derivatives" begin

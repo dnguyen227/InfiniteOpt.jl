@@ -2,11 +2,6 @@
 #                              MODEL COPYING
 ################################################################################
 
-# Sentinel backend used during deepcopy to avoid the
-# GenericModel deepcopy restriction in JuMP.
-struct _CopyBackend <: AbstractTransformationBackend end
-Base.empty!(::_CopyBackend) = nothing
-
 """
     InfiniteReferenceMap
 
@@ -108,21 +103,9 @@ new_c = ref_map[c]
 ```
 """
 function JuMP.copy_model(model::InfiniteModel)
-    # Temporarily swap out fields that can't/shouldn't be
-    # deepcopied:
-    # - backend contains a GenericModel (JuMP blocks deepcopy)
-    # - ext should go through copy_extension_data protocol
-    saved_backend = model.backend
-    saved_ext = model.ext
-    model.backend = _CopyBackend()
-    model.ext = Dict{Symbol, Any}()
-    new_model = try
-        Base.deepcopy(model)
-    finally
-        model.backend = saved_backend
-        model.ext = saved_ext
-    end
-    # Give new model a fresh backend
+    new_model = Base.deepcopy(model)
+    # Give the copy a fresh backend and mark for
+    # retranscription.
     new_model.backend = TranscriptionBackend()
     new_model.ready_to_optimize = false
     # Copy extension data via JuMP's protocol so that
