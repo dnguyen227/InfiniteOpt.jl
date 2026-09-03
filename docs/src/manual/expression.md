@@ -20,6 +20,10 @@ ParameterFunctionRef
 JuMP.name(::ParameterFunctionRef)
 raw_function(::ParameterFunctionRef)
 JuMP.parameter_value(::ParameterFunctionRef)
+JuMP.has_lower_bound(::ParameterFunctionRef)
+JuMP.lower_bound(::ParameterFunctionRef)
+JuMP.has_upper_bound(::ParameterFunctionRef)
+JuMP.upper_bound(::ParameterFunctionRef)
 call_function
 parameter_refs(::ParameterFunctionRef)
 parameter_list(::ParameterFunctionRef)
@@ -38,6 +42,8 @@ all_parameter_functions
 ```@docs
 JuMP.set_name(::ParameterFunctionRef, ::String)
 JuMP.set_parameter_value(::ParameterFunctionRef, ::Function)
+JuMP.set_lower_bound(::ParameterFunctionRef, ::Real)
+JuMP.set_upper_bound(::ParameterFunctionRef, ::Real)
 JuMP.delete(::InfiniteModel, ::ParameterFunctionRef)
 ```
 

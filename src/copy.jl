@@ -44,7 +44,9 @@ function _rewrite_param_function(
     return ParameterFunction(
         pf.func,
         _rewrite_param_refs(pf.parameter_refs, ref_map),
-        copy(pf.group_int_idxs)
+        copy(pf.group_int_idxs),
+        pf.lower_bound,
+        pf.upper_bound
         )
 end
 
