@@ -132,11 +132,18 @@
         @test has_upper_bound(fref)
         @test upper_bound(fref) == 1
         @test upper_bound(gvref) == 1
-        # test removing bounds via infinite values
-        @test isa(set_lower_bound(fref, -Inf), Nothing)
+        # test that non-finite bounds are rejected
+        @test_throws ErrorException set_lower_bound(fref, -Inf)
+        @test_throws ErrorException set_upper_bound(gvref, Inf)
+        @test lower_bound(fref) == -1
+        @test upper_bound(fref) == 1
+        # test deleting bounds
+        @test isa(delete_lower_bound(fref), Nothing)
         @test !has_lower_bound(fref)
-        @test isa(set_upper_bound(fref, Inf), Nothing)
+        @test_throws ErrorException delete_lower_bound(gvref)
+        @test isa(delete_upper_bound(gvref), Nothing)
         @test !has_upper_bound(fref)
+        @test_throws ErrorException delete_upper_bound(fref)
         # restore for later testsets
         @test isa(set_lower_bound(fref, -1), Nothing)
         @test isa(set_upper_bound(fref, 1), Nothing)

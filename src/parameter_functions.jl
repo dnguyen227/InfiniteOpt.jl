@@ -402,14 +402,31 @@ function JuMP.lower_bound(fref::ParameterFunctionRef)
     return core_object(fref).lower_bound
 end
 
+# Rebuild the parameter function with new declared bounds
+function _set_bounds(fref::ParameterFunctionRef, lower::Float64, upper::Float64)
+    old_pfunc = core_object(fref)
+    _set_core_object(
+        fref,
+        ParameterFunction(
+            old_pfunc.func,
+            old_pfunc.parameter_refs,
+            old_pfunc.group_int_idxs,
+            lower,
+            upper
+        )
+    )
+    return
+end
+
 """
     JuMP.set_lower_bound(fref::ParameterFunctionRef, lower::Real)::Nothing
 
 Extend `JuMP.set_lower_bound` to accomodate parameter functions. Declares
 that the output of the function is bounded below by `lower` over the
 domain of its infinite parameters. This is not verified, it is the
-modeler's responsibility to provide a valid bound. Setting `-Inf` removes
-a previously declared bound. Note that declared bounds are discarded by
+modeler's responsibility to provide a valid bound. Errors if `lower` is
+not finite; use [`JuMP.delete_lower_bound`](@ref JuMP.delete_lower_bound(::ParameterFunctionRef))
+to remove a declared bound. Note that declared bounds are discarded by
 [`JuMP.set_parameter_value`](@ref JuMP.set_parameter_value(::ParameterFunctionRef, ::Function))
 since they need not be valid for the new function.
 
@@ -422,17 +439,34 @@ julia> lower_bound(pfunc)
 ```
 """
 function JuMP.set_lower_bound(fref::ParameterFunctionRef, lower::Real)
-    old_pfunc = core_object(fref)
-    _set_core_object(
-        fref,
-        ParameterFunction(
-            old_pfunc.func,
-            old_pfunc.parameter_refs,
-            old_pfunc.group_int_idxs,
-            Float64(lower),
-            old_pfunc.upper_bound
-        )
-    )
+    if !isfinite(lower)
+        error("Unable to set the lower bound to $lower because the value ",
+              "is not finite. To remove the lower bound, use ",
+              "`delete_lower_bound`.")
+    end
+    _set_bounds(fref, Float64(lower), core_object(fref).upper_bound)
+    return
+end
+
+"""
+    JuMP.delete_lower_bound(fref::ParameterFunctionRef)::Nothing
+
+Extend `JuMP.delete_lower_bound` to remove the declared lower bound of
+`fref`. Errors if it doesn't have a lower bound.
+
+**Example**
+```julia-repl
+julia> delete_lower_bound(pfunc)
+
+julia> has_lower_bound(pfunc)
+false
+```
+"""
+function JuMP.delete_lower_bound(fref::ParameterFunctionRef)
+    if !JuMP.has_lower_bound(fref)
+        error("Parameter function $(fref) does not have a lower bound.")
+    end
+    _set_bounds(fref, -Inf, core_object(fref).upper_bound)
     return
 end
 
@@ -479,8 +513,9 @@ end
 Extend `JuMP.set_upper_bound` to accomodate parameter functions. Declares
 that the output of the function is bounded above by `upper` over the
 domain of its infinite parameters. This is not verified, it is the
-modeler's responsibility to provide a valid bound. Setting `Inf` removes
-a previously declared bound. Note that declared bounds are discarded by
+modeler's responsibility to provide a valid bound. Errors if `upper` is
+not finite; use [`JuMP.delete_upper_bound`](@ref JuMP.delete_upper_bound(::ParameterFunctionRef))
+to remove a declared bound. Note that declared bounds are discarded by
 [`JuMP.set_parameter_value`](@ref JuMP.set_parameter_value(::ParameterFunctionRef, ::Function))
 since they need not be valid for the new function.
 
@@ -493,17 +528,34 @@ julia> upper_bound(pfunc)
 ```
 """
 function JuMP.set_upper_bound(fref::ParameterFunctionRef, upper::Real)
-    old_pfunc = core_object(fref)
-    _set_core_object(
-        fref,
-        ParameterFunction(
-            old_pfunc.func,
-            old_pfunc.parameter_refs,
-            old_pfunc.group_int_idxs,
-            old_pfunc.lower_bound,
-            Float64(upper)
-        )
-    )
+    if !isfinite(upper)
+        error("Unable to set the upper bound to $upper because the value ",
+              "is not finite. To remove the upper bound, use ",
+              "`delete_upper_bound`.")
+    end
+    _set_bounds(fref, core_object(fref).lower_bound, Float64(upper))
+    return
+end
+
+"""
+    JuMP.delete_upper_bound(fref::ParameterFunctionRef)::Nothing
+
+Extend `JuMP.delete_upper_bound` to remove the declared upper bound of
+`fref`. Errors if it doesn't have an upper bound.
+
+**Example**
+```julia-repl
+julia> delete_upper_bound(pfunc)
+
+julia> has_upper_bound(pfunc)
+false
+```
+"""
+function JuMP.delete_upper_bound(fref::ParameterFunctionRef)
+    if !JuMP.has_upper_bound(fref)
+        error("Parameter function $(fref) does not have an upper bound.")
+    end
+    _set_bounds(fref, core_object(fref).lower_bound, Inf)
     return
 end
 
