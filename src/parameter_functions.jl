@@ -31,24 +31,8 @@ function _data_object(fref::ParameterFunctionRef)
 end
 
 # Extend _set_core_object
-function _set_core_object(
-    fref::ParameterFunctionRef,
-    func::F
-    ) where {F <: ParameterFunction}
-    data = _data_object(fref)
-    if data isa ParameterFunctionData{F}
-        data.func = func
-    else
-        new_data = ParameterFunctionData(
-            func,
-            data.name,
-            data.measure_indices,
-            data.constraint_indices,
-            data.semi_infinite_var_indices,
-            data.point_var_indices
-        )
-        _data_dictionary(fref)[JuMP.index(fref)] = new_data
-    end
+function _set_core_object(fref::ParameterFunctionRef, func::ParameterFunction)
+    _data_object(fref).func = func
     return
 end
 
